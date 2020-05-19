@@ -1,0 +1,33 @@
+# /etc/conf.d/bitcoinrd: config file for /etc/init.d/bitcoinrd
+
+# Config file location
+#BITCOINRD_CONFIGFILE="/etc/bitcoinr/bitcoinr.conf"
+
+# What directory to write pidfile to?  (created and owned by $BITCOINRD_USER)
+#BITCOINRD_PIDDIR="/var/run/bitcoinrd"
+
+# What filename to give the pidfile
+#BITCOINRD_PIDFILE="${BITCOINRD_PIDDIR}/bitcoinrd.pid"
+
+# Where to write bitcoinrd data (be mindful that the blockchain is large)
+#BITCOINRD_DATADIR="/var/lib/bitcoinrd"
+
+# User and group to own bitcoinrd process
+#BITCOINRD_USER="bitcoinr"
+#BITCOINRD_GROUP="bitcoinr"
+
+# Path to bitcoinrd executable
+#BITCOINRD_BIN="/usr/bin/bitcoinrd"
+
+# Nice value to run bitcoinrd under
+#BITCOINRD_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#BITCOINRD_OPTS=""
+
+# The timeout in seconds OpenRC will wait for bitcoinrd to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+BITCOINRD_SIGTERM_TIMEOUT=60

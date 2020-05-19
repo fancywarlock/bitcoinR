@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/bitcoinr/.bitcoinr" ]; then
+	BITCOINRD_DEFAULT_DATADIR="/var/lib/bitcoinr/.bitcoinr"
+else
+	BITCOINRD_DEFAULT_DATADIR="/var/lib/bitcoinrd"
+fi
+
+BITCOINRD_CONFIGFILE=${BITCOINRD_CONFIGFILE:-/etc/bitcoinr/bitcoinr.conf}
+BITCOINRD_PIDDIR=${BITCOINRD_PIDDIR:-/var/run/bitcoinrd}
+BITCOINRD_PIDFILE=${BITCOINRD_PIDFILE:-${BITCOINRD_PIDDIR}/bitcoinrd.pid}
+BITCOINRD_DATADIR=${BITCOINRD_DATADIR:-${BITCOINRD_DEFAULT_DATADIR}}
+BITCOINRD_USER=${BITCOINRD_USER:-${BITCOINR_USER:-bitcoinr}}
+BITCOINRD_GROUP=${BITCOINRD_GROUP:-bitcoinr}
+BITCOINRD_BIN=${BITCOINRD_BIN:-/usr/bin/bitcoinrd}
+BITCOINRD_NICE=${BITCOINRD_NICE:-${NICELEVEL:-0}}
+BITCOINRD_OPTS="${BITCOINRD_OPTS:-${BITCOINR_OPTS}}"
+
+name="bitcoinR Core Daemon"
+description="bitcoinR cryptocurrency P2P network daemon"
+
+command="/usr/bin/bitcoinrd"
+command_args="-pid=\"${BITCOINRD_PIDFILE}\" \
+		-conf=\"${BITCOINRD_CONFIGFILE}\" \
+		-datadir=\"${BITCOINRD_DATADIR}\" \
+		-daemon \
+		${BITCOINRD_OPTS}"
+
+required_files="${BITCOINRD_CONFIGFILE}"
+start_stop_daemon_args="-u ${BITCOINRD_USER} \
+			-N ${BITCOINRD_NICE} -w 2000"
+pidfile="${BITCOINRD_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${BITCOINRD_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${BITCOINRD_USER}:${BITCOINRD_GROUP}" \
+	"${BITCOINRD_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${BITCOINRD_USER}:${BITCOINRD_GROUP}" \
+	"${BITCOINRD_PIDDIR}"
+
+	checkpath -f \
+	-o ${BITCOINRD_USER}:${BITCOINRD_GROUP} \
+	-m 0660 \
+	${BITCOINRD_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${BITCOINRD_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run bitcoinrd."
+		eerror "The setting must appear in ${BITCOINRD_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"bitcoinR Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

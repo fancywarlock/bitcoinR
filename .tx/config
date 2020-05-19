@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[bitcoinr.qt-translation-017x]
+file_filter = src/qt/locale/bitcoinr_<lang>.ts
+source_file = src/qt/locale/bitcoinr_en.ts
+source_lang = en
